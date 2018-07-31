@@ -1,12 +1,10 @@
 package ru.pioneersystem.testmarketapplication.mvp.presenters;
 
-import android.support.annotation.Nullable;
-
 import ru.pioneersystem.testmarketapplication.mvp.models.AuthModel;
 import ru.pioneersystem.testmarketapplication.mvp.views.IAuthView;
 import ru.pioneersystem.testmarketapplication.ui.custom_views.AuthPanel;
 
-public class AuthPresenter implements IAuthPresenter {
+public class AuthPresenter extends AbstractPresenter<IAuthView> implements IAuthPresenter {
     private static AuthPresenter ourInstance = new AuthPresenter();
     private AuthModel mAuthModel;
     private IAuthView mAuthView;
@@ -20,16 +18,6 @@ public class AuthPresenter implements IAuthPresenter {
     }
 
     @Override
-    public void takeView(IAuthView authView) {
-        mAuthView = authView;
-    }
-
-    @Override
-    public void dropView() {
-        mAuthView = null;
-    }
-
-    @Override
     public void initView() {
         if (getView() != null) {
             if (checkUserAuth()) {
@@ -38,12 +26,6 @@ public class AuthPresenter implements IAuthPresenter {
                 getView().showLoginBtn();
             }
         }
-    }
-
-    @Nullable
-    @Override
-    public IAuthView getView() {
-        return mAuthView;
     }
 
     @Override
@@ -83,6 +65,7 @@ public class AuthPresenter implements IAuthPresenter {
     public void clickOnShowCatalog() {
         if (getView() != null) {
             getView().showMessage("Показать каталог");
+            getView().showCatalogScreen();
         }
     }
 

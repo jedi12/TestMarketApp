@@ -11,4 +11,18 @@
 
     <string name="show_catalog">Смотреть каталог</string>
     <string name="enter">Войти</string>
+    <string name="nav_account">Личный кабинет</string>
+    <string name="nav_catalog">Каталог товаров</string>
+    <string name="nav_favorite">Избранное</string>
+    <string name="nav_orders">Мои заказы</string>
+    <string name="nav_notification">Мои уведомления</string>
+    <string name="open_drawer">open</string>
+    <string name="close_drawer">close</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="to_cart">В корзину</string>
+    <string name="to_cart_vertical">В\n \nк\nо\nр\nз\nи\nн\nу</string>
+    <string name="error_message">Что-то пошло не так, попробуйте позже</string>
+    <string name="label_product_cost">Стоимость</string>
+    <string name="label_product_count">Количество</string>
 </resources>

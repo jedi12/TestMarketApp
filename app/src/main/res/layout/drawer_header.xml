@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/drawer_header_img_size"
+    android:background="@drawable/nav_header_bg"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/spacing_16"
+    android:paddingLeft="@dimen/spacing_16"
+    android:paddingRight="@dimen/spacing_16"
+    android:paddingTop="@dimen/avatar_top_padding"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark">
+
+    <ImageView
+        android:layout_width="@dimen/drawer_avatar_size"
+        android:layout_height="@dimen/drawer_avatar_size"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/user_avatar"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:fontFamily="@string/roboto_medium"
+        android:text="User first name"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/text_size_16"/>
+
+</RelativeLayout>

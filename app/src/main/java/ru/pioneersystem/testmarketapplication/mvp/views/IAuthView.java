@@ -5,13 +5,7 @@ import android.support.annotation.Nullable;
 import ru.pioneersystem.testmarketapplication.mvp.presenters.IAuthPresenter;
 import ru.pioneersystem.testmarketapplication.ui.custom_views.AuthPanel;
 
-public interface IAuthView {
-    void showMessage(String message);
-    void showError(Throwable e);
-
-    void showLoad();
-    void hideLoad();
-
+public interface IAuthView extends IView {
     IAuthPresenter getPresenter();
 
     void showLoginBtn();
@@ -21,4 +15,6 @@ public interface IAuthView {
 
     @Nullable
     AuthPanel getAuthPanel();
+
+    void showCatalogScreen();
 }

@@ -1,6 +1,6 @@
 package ru.pioneersystem.testmarketapplication.mvp.models;
 
-public class AuthModel {
+public class AuthModel extends AbstractModel {
 
     public AuthModel() {
 

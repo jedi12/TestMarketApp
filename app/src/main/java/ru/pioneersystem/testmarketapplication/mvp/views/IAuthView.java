@@ -5,7 +5,7 @@ import android.support.annotation.Nullable;
 import ru.pioneersystem.testmarketapplication.mvp.presenters.IAuthPresenter;
 import ru.pioneersystem.testmarketapplication.ui.custom_views.AuthPanel;
 
-public interface IAuthView extends IView {
+public interface IAuthView extends IRootView {
     IAuthPresenter getPresenter();
 
     void showLoginBtn();

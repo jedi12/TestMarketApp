@@ -1,20 +1,30 @@
 package ru.pioneersystem.testmarketapplication.mvp.presenters;
 
+import android.util.Log;
+
+import javax.inject.Inject;
+
+import dagger.Provides;
+import ru.pioneersystem.testmarketapplication.di.DaggerService;
+import ru.pioneersystem.testmarketapplication.di.scopes.AuthScope;
 import ru.pioneersystem.testmarketapplication.mvp.models.AuthModel;
 import ru.pioneersystem.testmarketapplication.mvp.views.IAuthView;
 import ru.pioneersystem.testmarketapplication.ui.custom_views.AuthPanel;
 
 public class AuthPresenter extends AbstractPresenter<IAuthView> implements IAuthPresenter {
-    private static AuthPresenter ourInstance = new AuthPresenter();
-    private AuthModel mAuthModel;
-    private IAuthView mAuthView;
+    private static final String TAG = "AuthPresenter";
+
+    @Inject
+    AuthModel mAuthModel;
 
     public AuthPresenter() {
-        mAuthModel = new AuthModel();
-    }
-
-    public static AuthPresenter getInstance() {
-        return ourInstance;
+        Component component = DaggerService.getComponent(Component.class);
+        if (component == null) {
+            component = createDaggerComponent();
+            DaggerService.registerComponent(Component.class, component);
+        }
+        component.inject(this);
+        Log.e(TAG, "AuthPresenter: inject complete");
     }
 
     @Override
@@ -72,5 +82,26 @@ public class AuthPresenter extends AbstractPresenter<IAuthView> implements IAuth
     @Override
     public boolean checkUserAuth() {
         return mAuthModel.isAuthUser();
+    }
+
+    private Component createDaggerComponent() {
+        return DaggerAuthPresenter_Component.builder()
+                .module(new Module())
+                .build();
+    }
+
+    @dagger.Module
+    public class Module {
+        @Provides
+        @AuthScope
+        AuthModel provideAuthModel() {
+            return new AuthModel();
+        }
+    }
+
+    @dagger.Component(modules = AuthPresenter.Module.class)
+    @AuthScope
+    public interface Component {
+        void inject(AuthPresenter presenter);
     }
 }

@@ -1,21 +1,31 @@
 package ru.pioneersystem.testmarketapplication.mvp.presenters;
 
+import javax.inject.Inject;
+
+import dagger.Provides;
 import ru.pioneersystem.testmarketapplication.data.storage.dto.ProductDto;
+import ru.pioneersystem.testmarketapplication.di.DaggerService;
+import ru.pioneersystem.testmarketapplication.di.scopes.ProductScope;
 import ru.pioneersystem.testmarketapplication.mvp.models.ProductModel;
 import ru.pioneersystem.testmarketapplication.mvp.views.IProductView;
 
 public class ProductPresenter extends AbstractPresenter<IProductView> implements IProductPresenter {
     private static final String TAG = "ProductPresenter";
-    private ProductModel mProductModel;
+
+    @Inject
+    ProductModel mProductModel;
+
     private ProductDto mProduct;
 
-    public static ProductPresenter newInstance(ProductDto product) {
-        return new ProductPresenter(product);
-    }
-
-    private ProductPresenter(ProductDto product) {
-        mProductModel = new ProductModel();
+    public ProductPresenter(ProductDto product) {
         mProduct = product;
+
+        Component component = DaggerService.getComponent(Component.class);
+        if (component == null) {
+            component = createDaggerComponent();
+            DaggerService.registerComponent(ProductPresenter.Component.class, component);
+        }
+        component.inject(this);
     }
 
     @Override
@@ -43,5 +53,26 @@ public class ProductPresenter extends AbstractPresenter<IProductView> implements
                 getView().updateProductCountView(mProduct);
             }
         }
+    }
+
+    private Component createDaggerComponent() {
+        return DaggerProductPresenter_Component.builder()
+                .module(new Module())
+                .build();
+    }
+
+    @dagger.Module
+    public class Module {
+        @Provides
+        @ProductScope
+        ProductModel provideProductModel() {
+            return new ProductModel();
+        }
+    }
+
+    @dagger.Component(modules = ProductPresenter.Module.class)
+    @ProductScope
+    public interface Component {
+        void inject(ProductPresenter productPresenter);
     }
 }

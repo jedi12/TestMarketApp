@@ -1,10 +1,10 @@
 package ru.pioneersystem.testmarketapplication.ui.fragments;
 
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,14 +12,25 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import butterknife.BindDrawable;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.NetworkPolicy;
+import com.squareup.picasso.Picasso;
+
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import dagger.Provides;
+import ru.pioneersystem.testmarketapplication.App;
 import ru.pioneersystem.testmarketapplication.R;
 import ru.pioneersystem.testmarketapplication.data.storage.dto.ProductDto;
+import ru.pioneersystem.testmarketapplication.di.DaggerService;
+import ru.pioneersystem.testmarketapplication.di.components.DaggerPicassoComponent;
+import ru.pioneersystem.testmarketapplication.di.components.PicassoComponent;
+import ru.pioneersystem.testmarketapplication.di.modules.PicassoCacheModule;
+import ru.pioneersystem.testmarketapplication.di.scopes.ProductScope;
 import ru.pioneersystem.testmarketapplication.mvp.presenters.ProductPresenter;
-import ru.pioneersystem.testmarketapplication.mvp.presenters.ProductPresenterFactory;
 import ru.pioneersystem.testmarketapplication.mvp.views.IProductView;
 import ru.pioneersystem.testmarketapplication.ui.activities.RootActivity;
 
@@ -35,10 +46,11 @@ public class ProductFragment extends Fragment implements IProductView {
     @BindView(R.id.plus_btn) ImageButton plusBtn;
     @BindView(R.id.minus_btn) ImageButton minusBtn;
 
-    // TODO: 30.07.2018 Загружать через Picasso
-    @BindDrawable(R.drawable.radio_image) Drawable productDraw;
+    @Inject
+    Picasso mPicasso;
 
-    private ProductPresenter mPresenter;
+    @Inject
+    ProductPresenter mPresenter;
 
     public ProductFragment() {
 
@@ -55,7 +67,9 @@ public class ProductFragment extends Fragment implements IProductView {
     private void readBundle(Bundle bundle) {
         if (bundle != null) {
             ProductDto product = bundle.getParcelable(PRODUCT_DTO);
-            mPresenter = ProductPresenterFactory.getInstance(product);
+            Component component = createDaggerComponent(product);
+            component.inject(this);
+            // TODO: 03.08.2018 fix recreate component
         }
     }
 
@@ -88,8 +102,24 @@ public class ProductFragment extends Fragment implements IProductView {
             productPriceTxt.setText(String.valueOf(product.getPrice() + ".-"));
         }
 
-        // TODO: 30.07.2018 Загружать через Picasso из url
-        productImage.setImageDrawable(productDraw);
+        mPicasso.load(product.getImageUrl())
+                .networkPolicy(NetworkPolicy.OFFLINE)
+                .fit()
+                .centerCrop()
+                .into(productImage, new Callback() {
+                    @Override
+                    public void onSuccess() {
+                        Log.e(TAG, "onSuccess: load from cache");
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        mPicasso.load(product.getImageUrl())
+                                .fit()
+                                .centerCrop()
+                                .into(productImage);
+                    }
+                });
     }
 
     @Override
@@ -98,26 +128,6 @@ public class ProductFragment extends Fragment implements IProductView {
         if (product.getCount() > 0) {
             productPriceTxt.setText(String.valueOf(product.getCount() * product.getPrice() + ".-"));
         }
-    }
-
-    @Override
-    public void showMessage(String message) {
-        getRootActivity().showMessage(message);
-    }
-
-    @Override
-    public void showError(Throwable e) {
-        getRootActivity().showError(e);
-    }
-
-    @Override
-    public void showLoad() {
-        getRootActivity().showLoad();
-    }
-
-    @Override
-    public void hideLoad() {
-        getRootActivity().hideLoad();
     }
 
     private RootActivity getRootActivity() {
@@ -132,5 +142,41 @@ public class ProductFragment extends Fragment implements IProductView {
     @OnClick(R.id.minus_btn)
     public void onClickMinus(View v) {
         mPresenter.clickOnMinus();
+    }
+
+    private Component createDaggerComponent(ProductDto product) {
+        PicassoComponent picassoComponent = DaggerService.getComponent(PicassoComponent.class);
+        if (picassoComponent == null) {
+            picassoComponent = DaggerPicassoComponent.builder()
+                    .appComponent(App.getAppComponent())
+                    .picassoCacheModule(new PicassoCacheModule())
+                    .build();
+            DaggerService.registerComponent(PicassoComponent.class, picassoComponent);
+        }
+        return DaggerProductFragment_Component.builder()
+                .picassoComponent(picassoComponent)
+                .module(new Module(product))
+                .build();
+    }
+
+    @dagger.Module
+    public class Module {
+        ProductDto mProductDto;
+
+        public Module(ProductDto productDto) {
+            mProductDto = productDto;
+        }
+
+        @Provides
+        @ProductScope
+        ProductPresenter provideProductPresenter() {
+            return new ProductPresenter(mProductDto);
+        }
+    }
+
+    @dagger.Component(dependencies = PicassoComponent.class, modules = ProductFragment.Module.class)
+    @ProductScope
+    public interface Component {
+        void inject(ProductFragment fragment);
     }
 }

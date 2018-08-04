@@ -15,22 +15,29 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.widget.FrameLayout;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import dagger.Provides;
 import ru.pioneersystem.testmarketapplication.BuildConfig;
 import ru.pioneersystem.testmarketapplication.R;
-import ru.pioneersystem.testmarketapplication.data.DataManager;
-import ru.pioneersystem.testmarketapplication.mvp.views.IView;
+import ru.pioneersystem.testmarketapplication.di.DaggerService;
+import ru.pioneersystem.testmarketapplication.di.scopes.RootScope;
+import ru.pioneersystem.testmarketapplication.mvp.presenters.RootPresenter;
+import ru.pioneersystem.testmarketapplication.mvp.views.IRootView;
 import ru.pioneersystem.testmarketapplication.ui.fragments.AccountFragment;
 import ru.pioneersystem.testmarketapplication.ui.fragments.CatalogFragment;
-import ru.pioneersystem.testmarketapplication.ui.fragments.ProductFragment;
 
-public class RootActivity extends AppCompatActivity implements IView, NavigationView.OnNavigationItemSelectedListener {
+public class RootActivity extends AppCompatActivity implements IRootView, NavigationView.OnNavigationItemSelectedListener {
     @BindView(R.id.drawer_layout) DrawerLayout mDrawer;
     @BindView(R.id.nav_view) NavigationView mNavigationView;
     @BindView(R.id.toolbar) Toolbar mToolbar;
     @BindView(R.id.coordinator_container) CoordinatorLayout mCoordinatorLayout;
     @BindView(R.id.fragment_container) FrameLayout mFragmentContainer;
+
+    @Inject
+    RootPresenter mRootPresenter;
 
     FragmentManager mFragmentManager;
 
@@ -39,6 +46,14 @@ public class RootActivity extends AppCompatActivity implements IView, Navigation
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_root);
         ButterKnife.bind(this);
+
+        Component component = DaggerService.getComponent(Component.class);
+        if (component == null) {
+            component = createDaggerComponent();
+            DaggerService.registerComponent(RootActivity.Component.class, component);
+        }
+        component.inject(this);
+        mRootPresenter.takeView(this);
 
         initToolbar();
         initDrawer();
@@ -49,6 +64,12 @@ public class RootActivity extends AppCompatActivity implements IView, Navigation
                     .replace(R.id.fragment_container, new CatalogFragment())
                     .commit();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        mRootPresenter.dropView();
+        super.onDestroy();
     }
 
     private void initToolbar() {
@@ -115,5 +136,27 @@ public class RootActivity extends AppCompatActivity implements IView, Navigation
     @Override
     public void hideLoad() {
 
+    }
+
+    private Component createDaggerComponent() {
+        return DaggerRootActivity_Component.builder()
+                .module(new Module())
+                .build();
+    }
+
+    @dagger.Module
+    public class Module {
+        @Provides
+        @RootScope
+        RootPresenter provideRootPresenter() {
+            return new RootPresenter();
+        }
+    }
+
+    @dagger.Component(modules = RootActivity.Module.class)
+    @RootScope
+    public interface Component {
+        void inject(RootActivity mRootActivity);
+        RootPresenter getRootPresenter();
     }
 }

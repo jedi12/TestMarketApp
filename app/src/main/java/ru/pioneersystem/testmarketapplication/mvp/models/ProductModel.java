@@ -1,11 +1,8 @@
 package ru.pioneersystem.testmarketapplication.mvp.models;
 
-import ru.pioneersystem.testmarketapplication.data.DataManager;
 import ru.pioneersystem.testmarketapplication.data.storage.dto.ProductDto;
 
-public class ProductModel {
-    private DataManager mDataManager = DataManager.getInstance();
-
+public class ProductModel extends AbstractModel {
     public ProductDto getProductById(int productId) {
         return mDataManager.getProductById(productId);
     }

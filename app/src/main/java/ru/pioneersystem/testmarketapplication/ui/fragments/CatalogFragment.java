@@ -12,11 +12,16 @@ import android.widget.Button;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import dagger.Provides;
 import ru.pioneersystem.testmarketapplication.R;
 import ru.pioneersystem.testmarketapplication.data.storage.dto.ProductDto;
+import ru.pioneersystem.testmarketapplication.di.DaggerService;
+import ru.pioneersystem.testmarketapplication.di.scopes.CatalogScope;
 import ru.pioneersystem.testmarketapplication.mvp.presenters.CatalogPresenter;
 import ru.pioneersystem.testmarketapplication.mvp.views.ICatalogView;
 import ru.pioneersystem.testmarketapplication.ui.activities.RootActivity;
@@ -24,10 +29,12 @@ import ru.pioneersystem.testmarketapplication.ui.fragments.adapters.CatalogAdapt
 
 public class CatalogFragment extends Fragment implements ICatalogView {
     private static final String TAG = "CatalogFragment";
-    private CatalogPresenter mPresenter = CatalogPresenter.getInstance();
 
     @BindView(R.id.add_to_cart_btn) Button addToCardBtn;
     @BindView(R.id.product_pager) ViewPager productPager;
+
+    @Inject
+    CatalogPresenter mPresenter;
 
     public CatalogFragment() {
 
@@ -39,6 +46,13 @@ public class CatalogFragment extends Fragment implements ICatalogView {
         View view = inflater.inflate(R.layout.fragment_catalog, container, false);
         ButterKnife.bind(this, view);
 
+        Component component = DaggerService.getComponent(Component.class);
+        if (component == null) {
+            component = createDaggerComponent();
+            DaggerService.registerComponent(Component.class, component);
+        }
+        component.inject(this);
+
         mPresenter.takeView(this);
         mPresenter.initView();
         return view;
@@ -48,11 +62,6 @@ public class CatalogFragment extends Fragment implements ICatalogView {
     public void onDestroyView() {
         mPresenter.dropView();
         super.onDestroyView();
-    }
-
-    @Override
-    public void showAddToCartMessage(ProductDto productDto) {
-        showMessage("Товар " + productDto.getProductName() + " успешно добавлен в корзину");
     }
 
     @Override
@@ -74,26 +83,6 @@ public class CatalogFragment extends Fragment implements ICatalogView {
 
     }
 
-    @Override
-    public void showMessage(String message) {
-        getRootActivity().showMessage(message);
-    }
-
-    @Override
-    public void showError(Throwable e) {
-        getRootActivity().showError(e);
-    }
-
-    @Override
-    public void showLoad() {
-        getRootActivity().showLoad();
-    }
-
-    @Override
-    public void hideLoad() {
-        getRootActivity().hideLoad();
-    }
-
     private RootActivity getRootActivity() {
         return (RootActivity) getActivity();
     }
@@ -106,5 +95,26 @@ public class CatalogFragment extends Fragment implements ICatalogView {
     @OnClick()
     public void onClick1(View v) {
 
+    }
+
+    private Component createDaggerComponent() {
+        return DaggerCatalogFragment_Component.builder()
+                .module(new Module())
+                .build();
+    }
+
+    @dagger.Module
+    public class Module {
+        @Provides
+        @CatalogScope
+        CatalogPresenter provideCatalogPresenter() {
+            return new CatalogPresenter();
+        }
+    }
+
+    @dagger.Component(modules = CatalogFragment.Module.class)
+    @CatalogScope
+    public interface Component {
+        void inject(CatalogFragment catalogFragment);
     }
 }

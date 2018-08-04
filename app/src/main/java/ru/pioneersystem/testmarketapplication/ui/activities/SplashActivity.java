@@ -8,21 +8,27 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import dagger.Provides;
 import ru.pioneersystem.testmarketapplication.BuildConfig;
 import ru.pioneersystem.testmarketapplication.R;
+import ru.pioneersystem.testmarketapplication.di.DaggerService;
+import ru.pioneersystem.testmarketapplication.di.scopes.AuthScope;
 import ru.pioneersystem.testmarketapplication.mvp.presenters.AuthPresenter;
 import ru.pioneersystem.testmarketapplication.mvp.presenters.IAuthPresenter;
 import ru.pioneersystem.testmarketapplication.mvp.views.IAuthView;
 import ru.pioneersystem.testmarketapplication.ui.custom_views.AuthPanel;
 
 public class SplashActivity extends AppCompatActivity implements IAuthView {
-    AuthPresenter mPresenter = AuthPresenter.getInstance();
 
-    @BindView(R.id.coordinator_container)
-    CoordinatorLayout mCoordinatorLayout;
+    @Inject
+    AuthPresenter mPresenter;
+
+    @BindView(R.id.coordinator_container) CoordinatorLayout mCoordinatorLayout;
     @BindView(R.id.show_catalog_btn) Button mShowCatalogBtn;
     @BindView(R.id.login_btn) Button mShowLoginBtn;
     @BindView(R.id.auth_wrapper) AuthPanel mAuthPanel;
@@ -32,6 +38,14 @@ public class SplashActivity extends AppCompatActivity implements IAuthView {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         ButterKnife.bind(this);
+
+        Component component = DaggerService.getComponent(Component.class);
+        if (component == null) {
+            component = createDaggerComponent();
+            DaggerService.registerComponent(Component.class, component);
+        }
+        component.inject(this);
+
         mPresenter.takeView(this);
         mPresenter.initView();
     }
@@ -39,6 +53,9 @@ public class SplashActivity extends AppCompatActivity implements IAuthView {
     @Override
     protected void onDestroy() {
         mPresenter.dropView();
+        if (isFinishing()) {
+            DaggerService.unregisterScope(AuthScope.class);
+        }
         super.onDestroy();
     }
 
@@ -96,6 +113,7 @@ public class SplashActivity extends AppCompatActivity implements IAuthView {
     public void showCatalogScreen() {
         Intent intent = new Intent(this, RootActivity.class);
         startActivity(intent);
+        finish();
     }
 
     @Override
@@ -115,5 +133,26 @@ public class SplashActivity extends AppCompatActivity implements IAuthView {
     @OnClick(R.id.login_btn)
     public void onClickLogin() {
         mPresenter.clickOnLogin();
+    }
+
+    private Component createDaggerComponent() {
+        return DaggerSplashActivity_Component.builder()
+                .module(new Module())
+                .build();
+    }
+
+    @dagger.Module
+    public class Module {
+        @Provides
+        @AuthScope
+        AuthPresenter provideAuthPresenter() {
+            return new AuthPresenter();
+        }
+    }
+
+    @dagger.Component(modules = SplashActivity.Module.class)
+    @AuthScope
+    interface Component {
+        void inject(SplashActivity activity);
     }
 }
